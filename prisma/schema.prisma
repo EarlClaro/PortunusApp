@@ -1,15 +1,172 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+enum Role {
+  COMPANY_ADMIN
+  HR_ADMIN
+  COMPANY_REP
+  FLEET_SUPERINTENDENT
+  OPERATIONS_MANAGER
+  CAPTAIN
+  CHIEF_MATE
+  CHIEF_ENGINEER
+  SECOND_ENGINEER
+  SHIP_CREW
+  SAFETY_OFFICER
+  COMPANY_EMPLOYEE
+  PORT_OFFICIAL
+}
+
+enum DocStatus {
+  VALID
+  EXPIRING
+  EXPIRED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum AuditStatus {
+  DRAFT
+  IN_PROGRESS
+  SUBMITTED
+  REVIEWED
+}
+
+model User {
+  id             String           @id @default(cuid())
+  name           String
+  email          String           @unique
+  passwordHash   String
+  role           Role
+  position       String?
+  contact        String?
+  vesselId       String?
+  vessel         Vessel?          @relation("VesselUsers", fields: [vesselId], references: [id]) // <-- Named relation
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  documents      Document[]
+  assignments    CrewAssignment[]
+  auditsAuthored AuditInstance[]  @relation("AuditAuthor")
+  incidents      Incident[]       @relation("IncidentAuthor")
+  notifications  Notification[]
+}
+
+model Vessel {
+  id           String           @id @default(cuid())
+  name         String
+  imoNumber    String?          @unique
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  crew         CrewAssignment[]
+  certificates Document[]       @relation("VesselDocuments")
+  audits       AuditInstance[]
+  incidents    Incident[]
+  users        User[]           @relation("VesselUsers")
+}
+
+model CrewAssignment {
+  id            String    @id @default(cuid())
+  userId        String
+  vesselId      String
+  contractStart DateTime
+  contractEnd   DateTime?
+  user          User      @relation(fields: [userId], references: [id])
+  vessel        Vessel    @relation(fields: [vesselId], references: [id])
+  createdAt     DateTime  @default(now())
+}
+
+model Document {
+  id         String            @id @default(cuid())
+  ownerId    String? // seafarer user id (for personal docs)
+  vesselId   String? // for vessel certificates
+  type       String
+  issuer     String?
+  issueDate  DateTime?
+  expiryDate DateTime?
+  status     DocStatus         @default(VALID)
+  currentUrl String
+  label      String? // General/Manual/Instructions/Policy
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  owner      User?             @relation(fields: [ownerId], references: [id])
+  vessel     Vessel?           @relation("VesselDocuments", fields: [vesselId], references: [id])
+  versions   DocumentVersion[]
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  url        String
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id])
+}
+
+model AuditTemplate {
+  id        String          @id @default(cuid())
+  name      String
+  sections  Json
+  createdBy String?
+  createdAt DateTime        @default(now())
+  instances AuditInstance[]
+}
+
+model AuditInstance {
+  id          String        @id @default(cuid())
+  templateId  String
+  vesselId    String
+  startedById String
+  status      AuditStatus   @default(DRAFT)
+  answers     Json?
+  submittedAt DateTime?
+  reportUrl   String?
+  createdAt   DateTime      @default(now())
+  template    AuditTemplate @relation(fields: [templateId], references: [id])
+  vessel      Vessel        @relation(fields: [vesselId], references: [id])
+  author      User          @relation("AuditAuthor", fields: [startedById], references: [id])
+}
+
+model Incident {
+  id          String           @id @default(cuid())
+  vesselId    String
+  createdById String
+  type        String
+  severity    IncidentSeverity
+  description String
+  location    String?
+  occurredAt  DateTime
+  status      IncidentStatus   @default(PENDING)
+  attachments Json?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  vessel      Vessel           @relation(fields: [vesselId], references: [id])
+  author      User             @relation("IncidentAuthor", fields: [createdById], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  message   String
+  meta      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
 }
