@@ -32,7 +32,9 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/audits', auditRoutes);
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/notifications', notificationRoutes);
-
+app.get('/', (_req, res) => {
+  res.json({ message: 'Welcome to Portunus API' });
+});
 // Errors
 app.use(notFound);
 app.use(errorHandler);
