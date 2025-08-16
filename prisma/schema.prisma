@@ -51,24 +51,23 @@ enum AuditStatus {
 }
 
 model User {
-  id               String   @id @default(cuid())
-  name             String
-  email            String   @unique
-  passwordHash     String
-  role              Role?    @default(COMPANY_EMPLOYEE)
-  position         String?
-  contact          String?
-  vesselId         String?
-  vessel           Vessel?  @relation("VesselUsers", fields: [vesselId], references: [id])
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  documents        Document[]
-  assignments      CrewAssignment[]
-  auditsAuthored   AuditInstance[] @relation("AuditAuthor")
-  incidents        Incident[]      @relation("IncidentAuthor")
-  notifications    Notification[]
+  id             String           @id @default(cuid())
+  name           String
+  email          String           @unique
+  passwordHash   String
+  role           Role?            @default(COMPANY_EMPLOYEE)
+  position       String?
+  contact        String?
+  vesselId       String?
+  vessel         Vessel?          @relation("VesselUsers", fields: [vesselId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  documents      Document[]
+  assignments    CrewAssignment[]
+  auditsAuthored AuditInstance[]  @relation("AuditAuthor")
+  incidents      Incident[]       @relation("IncidentAuthor")
+  notifications  Notification[]
 }
-
 
 model Vessel {
   id           String           @id @default(cuid())
@@ -94,30 +93,44 @@ model CrewAssignment {
   createdAt     DateTime  @default(now())
 }
 
+model Folder {
+  id        Int        @id @default(autoincrement())
+  name      String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  documents Document[]
+}
+
 model Document {
-  id         String            @id @default(cuid())
-  ownerId    String? // seafarer user id (for personal docs)
-  vesselId   String? // for vessel certificates
-  type       String
-  issuer     String?
-  issueDate  DateTime?
-  expiryDate DateTime?
-  status     DocStatus         @default(VALID)
-  currentUrl String
-  label      String? // General/Manual/Instructions/Policy
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  owner      User?             @relation(fields: [ownerId], references: [id])
-  vessel     Vessel?           @relation("VesselDocuments", fields: [vesselId], references: [id])
-  versions   DocumentVersion[]
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  fileUrl     String
+  fileType    String
+  issueDate   DateTime?
+  expiryDate  DateTime?
+  status      String    @default("valid")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  folderId Int?
+  folder   Folder? @relation(fields: [folderId], references: [id], map: "fk_document_folder")
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], map: "fk_document_user")
+
+  vesselId String?
+  vessel   Vessel? @relation("VesselDocuments", fields: [vesselId], references: [id], map: "fk_document_vessel")
+
+  versions DocumentVersion[]
 }
 
 model DocumentVersion {
   id         String   @id @default(cuid())
-  documentId String
+  documentId Int
   url        String
   createdAt  DateTime @default(now())
-  document   Document @relation(fields: [documentId], references: [id])
+  document   Document @relation(fields: [documentId], references: [id], map: "fk_document_version_document")
 }
 
 model AuditTemplate {
