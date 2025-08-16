@@ -1,6 +1,6 @@
 import multer from 'multer';
 import { randomUUID } from 'crypto';
-import { prisma } from '../utils/prisma.js';
+import prisma from '../utils/prisma.js';
 import { putBuffer, s3PublicUrl } from '../utils/s3.js';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
