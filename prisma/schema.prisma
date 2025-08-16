@@ -51,23 +51,24 @@ enum AuditStatus {
 }
 
 model User {
-  id             String           @id @default(cuid())
-  name           String
-  email          String           @unique
-  passwordHash   String
-  role           Role
-  position       String?
-  contact        String?
-  vesselId       String?
-  vessel         Vessel?          @relation("VesselUsers", fields: [vesselId], references: [id]) // <-- Named relation
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  documents      Document[]
-  assignments    CrewAssignment[]
-  auditsAuthored AuditInstance[]  @relation("AuditAuthor")
-  incidents      Incident[]       @relation("IncidentAuthor")
-  notifications  Notification[]
+  id               String   @id @default(cuid())
+  name             String
+  email            String   @unique
+  passwordHash     String
+  role              Role?    @default(COMPANY_EMPLOYEE)
+  position         String?
+  contact          String?
+  vesselId         String?
+  vessel           Vessel?  @relation("VesselUsers", fields: [vesselId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  documents        Document[]
+  assignments      CrewAssignment[]
+  auditsAuthored   AuditInstance[] @relation("AuditAuthor")
+  incidents        Incident[]      @relation("IncidentAuthor")
+  notifications    Notification[]
 }
+
 
 model Vessel {
   id           String           @id @default(cuid())
